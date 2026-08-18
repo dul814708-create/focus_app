@@ -164,4 +164,28 @@ function resetRitualUI(totalSeconds) {
   updateRingDisplay(totalSeconds, totalSeconds);
 }
 
+document.getElementById('checkinYesBtn').addEventListener('click', () => saveCheckin(true));
+document.getElementById('checkinNoBtn').addEventListener('click', () => saveCheckin(false));
+
+async function saveCheckin(done) {
+  if (!done) {
+    alert('已记录，明天加油');
+    return;
+  }
+  const note = document.getElementById('noteInput').value.trim();
+  const record = {
+    id: makeId(),
+    type: 'checkin',
+    task_name: null,
+    planned_minutes: null,
+    actual_minutes: null,
+    completed: null,
+    note: note || null,
+    created_at: new Date().toISOString(),
+  };
+  await insertSession(record);
+  await refreshDashboard();
+  alert('已签到');
+}
+
 boot();
