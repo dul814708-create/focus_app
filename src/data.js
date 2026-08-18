@@ -39,17 +39,17 @@ function readQueue() {
 }
 
 export async function flushQueue() {
-  const queue = readQueue();
-  if (queue.length === 0) return { flushed: 0, remaining: 0 };
-  const remaining = [];
-  let flushed = 0;
-  for (const record of queue) {
+  const snapshot = readQueue();
+  if (snapshot.length === 0) return { flushed: 0, remaining: 0 };
+  const succeededIds = new Set();
+  for (const record of snapshot) {
     const { error } = await supabase.from('sessions').upsert(record);
-    if (error) remaining.push(record);
-    else flushed += 1;
+    if (!error) succeededIds.add(record.id);
   }
+  const current = readQueue();
+  const remaining = current.filter((r) => !succeededIds.has(r.id));
   localStorage.setItem(QUEUE_KEY, JSON.stringify(remaining));
-  return { flushed, remaining: remaining.length };
+  return { flushed: succeededIds.size, remaining: remaining.length };
 }
 
 export function queueLength() {
