@@ -1,8 +1,7 @@
-import { getSession, signIn } from './auth.js';
-import { fetchSessions, flushQueue } from './data.js';
+import { getSession, signIn, onAuthChange } from './auth.js';
+import { fetchSessions, flushQueue, makeId, insertSession } from './data.js';
 import { renderDashboard } from './ui.js';
 import { createTimer } from './timer.js';
-import { makeId, insertSession } from './data.js';
 
 const loginScreen = document.getElementById('loginScreen');
 const appScreen = document.getElementById('appScreen');
@@ -10,6 +9,9 @@ const loginForm = document.getElementById('loginForm');
 const loginError = document.getElementById('loginError');
 
 async function boot() {
+  onAuthChange((session) => {
+    if (!session) showLogin();
+  });
   const session = await getSession();
   if (session) {
     await showApp();
@@ -27,11 +29,16 @@ async function showApp() {
   loginScreen.hidden = true;
   appScreen.hidden = false;
   document.getElementById('todayDate').textContent = formatDateHeading(new Date());
-  await refreshDashboard();
-  await flushQueue().then(refreshDashboard).catch(() => {});
   window.addEventListener('online', () => {
-    flushQueue().then(refreshDashboard).catch(() => {});
+    flushQueue().then((result) => {
+      if (result.remaining === 0) {
+        document.getElementById('syncStatus').hidden = true;
+      }
+      return refreshDashboard();
+    }).catch(() => {});
   });
+  await refreshDashboard().catch(() => {});
+  await flushQueue().then(refreshDashboard).catch(() => {});
 }
 
 async function refreshDashboard() {
@@ -76,19 +83,28 @@ const RING_CIRCUMFERENCE = 490;
 let selectedMinutes = 45;
 let timer = null;
 let currentTaskName = '';
+let sessionStartedAt = null;
 
 document.querySelectorAll('#durationSegmented button').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#durationSegmented button').forEach((b) => b.classList.remove('on'));
     btn.classList.add('on');
+    const customInput = document.getElementById('customMinutesInput');
     if (btn.dataset.minutes === 'custom') {
-      const input = prompt('输入自定义分钟数', '30');
-      selectedMinutes = Math.max(1, parseInt(input, 10) || 30);
-    } else {
-      selectedMinutes = parseInt(btn.dataset.minutes, 10);
+      customInput.hidden = false;
+      customInput.focus();
+      return; // wait for the input event below to set selectedMinutes
     }
+    customInput.hidden = true;
+    selectedMinutes = parseInt(btn.dataset.minutes, 10);
     updateRingDisplay(selectedMinutes * 60, selectedMinutes * 60);
   });
+});
+
+document.getElementById('customMinutesInput').addEventListener('input', (e) => {
+  const value = Math.max(1, parseInt(e.target.value, 10) || 30);
+  selectedMinutes = value;
+  updateRingDisplay(selectedMinutes * 60, selectedMinutes * 60);
 });
 
 function updateRingDisplay(remaining, totalSeconds) {
@@ -105,13 +121,13 @@ function formatMMSS(totalSeconds) {
 
 document.getElementById('startBtn').addEventListener('click', () => {
   currentTaskName = document.getElementById('taskNameInput').value.trim() || '未命名任务';
+  sessionStartedAt = new Date().toISOString();
   const totalSeconds = selectedMinutes * 60;
   timer = createTimer({
     totalSeconds,
     onTick: (remaining) => updateRingDisplay(remaining, totalSeconds),
     onComplete: async ({ completed, actualSeconds }) => {
       await saveFocusSession(totalSeconds, actualSeconds, completed);
-      resetRitualUI(totalSeconds);
     },
   });
   timer.start();
@@ -151,10 +167,22 @@ async function saveFocusSession(totalSeconds, actualSeconds, completed) {
     actual_minutes: Math.round(actualSeconds / 60),
     completed,
     note: null,
-    created_at: new Date().toISOString(),
+    created_at: sessionStartedAt,
   };
-  await insertSession(record);
-  await refreshDashboard();
+  const result = await insertSession(record);
+  showSyncStatus(result.synced);
+  try { await refreshDashboard(); } catch { /* offline; queued locally */ }
+  resetRitualUI(totalSeconds);
+}
+
+function showSyncStatus(synced) {
+  const syncStatus = document.getElementById('syncStatus');
+  if (!synced) {
+    syncStatus.textContent = '离线中，稍后自动同步';
+    syncStatus.hidden = false;
+  } else {
+    syncStatus.hidden = true;
+  }
 }
 
 function resetRitualUI(totalSeconds) {
@@ -183,8 +211,9 @@ async function saveCheckin(done) {
     note: note || null,
     created_at: new Date().toISOString(),
   };
-  await insertSession(record);
-  await refreshDashboard();
+  const result = await insertSession(record);
+  showSyncStatus(result.synced);
+  try { await refreshDashboard(); } catch { /* offline; queued locally */ }
   alert('已签到');
 }
 

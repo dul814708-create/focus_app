@@ -35,7 +35,12 @@ function queueRecord(record) {
 
 function readQueue() {
   const raw = localStorage.getItem(QUEUE_KEY);
-  return raw ? JSON.parse(raw) : [];
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
 }
 
 export async function flushQueue() {

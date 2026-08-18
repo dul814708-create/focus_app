@@ -34,6 +34,7 @@ function renderStreakDots(sessions, todayStr) {
 
 function renderWeekBars(sessions, todayStr) {
   const minutes = weeklyMinutes(sessions, todayStr);
+  const todayIdx = (parseLocalDate(todayStr).getDay() + 6) % 7; // JS getDay(): Sun=0..Sat=6 → convert to Mon=0..Sun=6
   const max = Math.max(60, ...minutes);
   const container = document.getElementById('weekBars');
   container.innerHTML = '';
@@ -41,7 +42,7 @@ function renderWeekBars(sessions, todayStr) {
     const bar = document.createElement('i');
     const pct = Math.max(6, Math.round((m / max) * 100));
     bar.style.height = pct + '%';
-    if (i === minutes.length - 1) bar.classList.add('today');
+    if (i === todayIdx) bar.classList.add('today');
     container.appendChild(bar);
   });
 }

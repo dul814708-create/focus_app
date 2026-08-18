@@ -20,8 +20,11 @@ export function daysWithActivity(sessions) {
 
 export function computeStreak(sessions, todayStr) {
   const activeDays = daysWithActivity(sessions);
-  let streak = 0;
   const cursor = parseLocalDate(todayStr);
+  if (!activeDays.has(toLocalDateStr(cursor))) {
+    cursor.setDate(cursor.getDate() - 1); // today not yet active — count from yesterday instead
+  }
+  let streak = 0;
   while (activeDays.has(toLocalDateStr(cursor))) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
