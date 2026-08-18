@@ -103,3 +103,29 @@ Scenario: user types task name "写报告" and first step "打开word", picks 45
 
 - The live-database migration SQL must be run manually by the human (see below) — until then, any `type:'miss'` insert will fail the check constraint and fall back to the offline queue (`insertSession` catches the Supabase error and queues locally), so the feature will silently degrade to "queued, not visible" rather than crash, but reason-tag misses won't sync until the migration runs.
 - The constraint-name assumption (`sessions_type_check`) is unverified against the live DB; documented safe fallback above.
+
+## Fix note (post-review, commit follows this report)
+
+Code review of commit `b31ad66` flagged the exact edge case already surfaced in Self-review finding #1 (second bullet) as an **Important** finding to fix rather than leave as a known gap: `#missReasonTags` stayed visible and its click handlers stayed live if the user clicked "没做到" then reconsidered and clicked "今天做到了" — a stray later tap on the still-visible/still-wired pill row would insert a spurious, permanent `type:'miss'` row for a day the user actually succeeded, with no UI to delete/edit it.
+
+**Fix applied:** added one line at the top of `saveCheckin()` in `src/main.js`:
+
+```javascript
+async function saveCheckin() {
+  document.getElementById('missReasonTags').hidden = true;
+  const note = document.getElementById('noteInput').value.trim();
+  // ...unchanged...
+}
+```
+
+Since `saveCheckin()` is only ever invoked by `checkinYesBtn`'s click handler, this guarantees the miss-reason row is closed every time "今天做到了" is clicked, regardless of whether it was previously opened via "没做到".
+
+### Hand-trace of corrected scenario
+
+1. User clicks "没做到" (`checkinNoBtn`). Handler runs `document.getElementById('missReasonTags').hidden = false;` → row becomes visible, its 4 `.tag-btn` buttons are interactable (their click listeners were already attached once at module load via the `querySelectorAll(...).forEach(...)` block — they don't get re-attached or removed, they're just inert while the parent is hidden).
+2. User reconsiders, clicks "今天做到了" (`checkinYesBtn`) → `saveCheckin()` runs. First line now executes: `document.getElementById('missReasonTags').hidden = true;` → row's `hidden` attribute is set (back) to `true` before any of the rest of the function runs. The row (and all 4 pills inside it) is now `display:none` per the browser's default UA stylesheet for `[hidden]` — removed from layout and from the hit-testing/paint tree.
+3. Rest of `saveCheckin()` proceeds unchanged: builds and inserts the `type:'checkin'` record, shows sync status, refreshes dashboard, alerts "已签到".
+4. A later "stray tap" at the pill's former screen coordinates hits whatever is now laid out there instead (the row occupies no space when hidden, so surrounding elements reflow into that space) — there is no way for a click event to land on a `display:none` element, so **no listener fires**. Even though the DOM nodes and their listeners still exist (they were never removed, only hidden), an element with no box has no hit-test target, so it is unreachable by mouse or touch. The only way to fire that listener again is for `missReasonTags.hidden` to be explicitly set back to `false` by the `checkinNoBtn` handler on a subsequent, deliberate "没做到" click — which is the intended, correct entry point.
+5. Confirmed: no spurious `type:'miss'` row can be inserted after "今天做到了" is clicked, closing the data-pollution risk the reviewer identified.
+
+This fix is included in commit (see below, applied after the original `b31ad66`).

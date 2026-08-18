@@ -235,6 +235,7 @@ document.querySelectorAll('#missReasonTags .tag-btn').forEach((btn) => {
 });
 
 async function saveCheckin() {
+  document.getElementById('missReasonTags').hidden = true;
   const note = document.getElementById('noteInput').value.trim();
   const record = {
     id: makeId(),
