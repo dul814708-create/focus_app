@@ -90,7 +90,7 @@ header.hero h1{font-size:2.1rem;font-weight:700;letter-spacing:-.015em;margin:0;
 
 .reveal{max-height:0;opacity:0;overflow:hidden;transition:max-height .28s ease, opacity .22s ease;}
 .reveal.open{max-height:220px;opacity:1;}
-.tag-panel{margin-top:.7rem;padding:.9rem .9rem .3rem;background:var(--surface-inset);border-radius:14px;position:relative;}
+.tag-panel{margin:.7rem 0;padding:.9rem .9rem .3rem;background:var(--surface-inset);border-radius:14px;position:relative;}
 .tag-panel.pointer::before{content:"";position:absolute;top:-6px;right:22%;width:12px;height:12px;background:var(--surface-inset);transform:rotate(45deg);border-radius:2px;}
 .tag-panel .lbl{font-size:.76rem;color:var(--ink-soft);margin:0 0 .6rem;}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem;padding-bottom:.9rem;}
