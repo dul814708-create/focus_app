@@ -13,6 +13,7 @@ export function parseLocalDate(dateStr) {
 export function daysWithActivity(sessions) {
   const set = new Set();
   for (const s of sessions) {
+    if (s.type === 'miss') continue;
     set.add(toLocalDateStr(new Date(s.created_at)));
   }
   return set;

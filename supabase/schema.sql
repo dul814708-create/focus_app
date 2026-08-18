@@ -1,7 +1,7 @@
 create table if not exists sessions (
   id uuid primary key,
   user_id uuid not null default auth.uid() references auth.users(id),
-  type text not null check (type in ('focus', 'checkin')),
+  type text not null check (type in ('focus', 'checkin', 'miss')),
   task_name text,
   planned_minutes integer,
   actual_minutes integer,

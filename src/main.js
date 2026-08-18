@@ -83,7 +83,9 @@ const RING_CIRCUMFERENCE = 490;
 let selectedMinutes = 45;
 let timer = null;
 let currentTaskName = '';
+let firstStepText = '';
 let sessionStartedAt = null;
+let lastSavedRecord = null;
 
 document.querySelectorAll('#durationSegmented button').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -121,6 +123,7 @@ function formatMMSS(totalSeconds) {
 
 document.getElementById('startBtn').addEventListener('click', () => {
   currentTaskName = document.getElementById('taskNameInput').value.trim() || '未命名任务';
+  firstStepText = document.getElementById('firstStepInput').value.trim();
   sessionStartedAt = new Date().toISOString();
   const totalSeconds = selectedMinutes * 60;
   timer = createTimer({
@@ -166,14 +169,28 @@ async function saveFocusSession(totalSeconds, actualSeconds, completed) {
     planned_minutes: Math.round(totalSeconds / 60),
     actual_minutes: Math.round(actualSeconds / 60),
     completed,
-    note: null,
+    note: firstStepText || null,
     created_at: sessionStartedAt,
   };
+  lastSavedRecord = record;
   const result = await insertSession(record);
   showSyncStatus(result.synced);
   try { await refreshDashboard(); } catch { /* offline; queued locally */ }
   resetRitualUI(totalSeconds);
+  document.getElementById('skipReasonTags').hidden = completed;
 }
+
+document.querySelectorAll('#skipReasonTags .tag-btn').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    if (!lastSavedRecord) return;
+    document.getElementById('skipReasonTags').hidden = true;
+    const updated = { ...lastSavedRecord, note: btn.dataset.reason };
+    lastSavedRecord = updated;
+    const result = await insertSession(updated);
+    showSyncStatus(result.synced);
+    try { await refreshDashboard(); } catch { /* offline; queued locally */ }
+  });
+});
 
 function showSyncStatus(synced) {
   const syncStatus = document.getElementById('syncStatus');
@@ -192,14 +209,32 @@ function resetRitualUI(totalSeconds) {
   updateRingDisplay(totalSeconds, totalSeconds);
 }
 
-document.getElementById('checkinYesBtn').addEventListener('click', () => saveCheckin(true));
-document.getElementById('checkinNoBtn').addEventListener('click', () => saveCheckin(false));
+document.getElementById('checkinYesBtn').addEventListener('click', () => saveCheckin());
+document.getElementById('checkinNoBtn').addEventListener('click', () => {
+  document.getElementById('missReasonTags').hidden = false;
+});
 
-async function saveCheckin(done) {
-  if (!done) {
+document.querySelectorAll('#missReasonTags .tag-btn').forEach((btn) => {
+  btn.addEventListener('click', async () => {
+    document.getElementById('missReasonTags').hidden = true;
+    const record = {
+      id: makeId(),
+      type: 'miss',
+      task_name: null,
+      planned_minutes: null,
+      actual_minutes: null,
+      completed: null,
+      note: btn.dataset.reason,
+      created_at: new Date().toISOString(),
+    };
+    const result = await insertSession(record);
+    showSyncStatus(result.synced);
+    try { await refreshDashboard(); } catch { /* offline; queued locally */ }
     alert('已记录，明天加油');
-    return;
-  }
+  });
+});
+
+async function saveCheckin() {
   const note = document.getElementById('noteInput').value.trim();
   const record = {
     id: makeId(),

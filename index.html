@@ -29,6 +29,7 @@
     <section class="card">
       <h2>专注仪式</h2>
       <input class="task-input" id="taskNameInput" type="text" placeholder="要做的事" />
+      <input class="task-input" id="firstStepInput" type="text" placeholder="最小的第一步（选填）" style="margin-top:.6rem" />
       <div class="segmented" id="durationSegmented">
         <button type="button" data-minutes="25">25′</button>
         <button type="button" data-minutes="45" class="on">45′</button>
@@ -58,6 +59,13 @@
         </div>
         <p class="sub">中途不拦分心网页，跑完如实记录结果</p>
         <p class="sync-status" id="syncStatus" hidden></p>
+        <div class="tag-row" id="skipReasonTags" hidden>
+          <p class="lbl">为什么中断了？（选填）</p>
+          <button type="button" class="tag-btn" data-reason="太累">太累</button>
+          <button type="button" class="tag-btn" data-reason="被打断">被打断</button>
+          <button type="button" class="tag-btn" data-reason="不想做">不想做</button>
+          <button type="button" class="tag-btn" data-reason="其他">其他</button>
+        </div>
       </div>
     </section>
 
@@ -86,6 +94,13 @@
       <div class="check-row">
         <button type="button" class="yes" id="checkinYesBtn">今天做到了</button>
         <button type="button" class="no" id="checkinNoBtn">没做到</button>
+      </div>
+      <div class="tag-row" id="missReasonTags" hidden>
+        <p class="lbl">是什么原因？（选填）</p>
+        <button type="button" class="tag-btn" data-reason="太累">太累</button>
+        <button type="button" class="tag-btn" data-reason="被打断">被打断</button>
+        <button type="button" class="tag-btn" data-reason="不想做">不想做</button>
+        <button type="button" class="tag-btn" data-reason="忘了打开">忘了打开</button>
       </div>
       <input class="note-input" id="noteInput" type="text" placeholder="明天第一件事" />
     </section>

@@ -84,6 +84,12 @@ header.hero h1{font-size:2.1rem;font-weight:700;letter-spacing:-.015em;margin:0;
 .timer-controls button{flex:1;border:1px solid var(--hairline);background:var(--surface-inset);color:var(--ink);padding:.65rem;border-radius:12px;font-size:.85rem;cursor:pointer;font-family:inherit;}
 .timer-controls button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 
+.tag-row{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.8rem;}
+.tag-row .lbl{width:100%;font-size:.78rem;color:var(--ink-soft);margin:0 0 .2rem;}
+.tag-btn{border:1px solid var(--hairline);background:var(--surface-inset);color:var(--ink);padding:.45rem .9rem;border-radius:999px;font-size:.82rem;cursor:pointer;font-family:inherit;}
+.tag-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.tag-btn:hover{border-color:var(--accent);}
+
 .stat-row{display:flex;gap:.9rem;margin-bottom:1.3rem;}
 .stat{flex:1;background:var(--surface-inset);border-radius:14px;padding:.9rem 1rem;}
 .stat .num{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:1.7rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);}
