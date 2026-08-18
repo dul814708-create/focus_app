@@ -1,1 +1,4 @@
-.worktrees/
+node_modules/
+开工-win32-x64/
+*.log
+.DS_Store
