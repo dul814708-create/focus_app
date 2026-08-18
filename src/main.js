@@ -1,4 +1,6 @@
 import { getSession, signIn } from './auth.js';
+import { fetchSessions, flushQueue } from './data.js';
+import { renderDashboard } from './ui.js';
 
 const loginScreen = document.getElementById('loginScreen');
 const appScreen = document.getElementById('appScreen');
@@ -24,10 +26,15 @@ async function showApp() {
   appScreen.hidden = false;
   document.getElementById('todayDate').textContent = formatDateHeading(new Date());
   await refreshDashboard();
+  await flushQueue().then(refreshDashboard).catch(() => {});
+  window.addEventListener('online', () => {
+    flushQueue().then(refreshDashboard).catch(() => {});
+  });
 }
 
 async function refreshDashboard() {
-  // Task 8 会在这里接入 fetchSessions() + renderDashboard()
+  const sessions = await fetchSessions();
+  renderDashboard(sessions);
 }
 
 function formatDateHeading(date) {
