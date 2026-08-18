@@ -87,10 +87,11 @@ let firstStepText = '';
 let sessionStartedAt = null;
 let lastSavedRecord = null;
 
-document.querySelectorAll('#durationSegmented button').forEach((btn) => {
+document.querySelectorAll('#durationSegmented button').forEach((btn, i) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('#durationSegmented button').forEach((b) => b.classList.remove('on'));
     btn.classList.add('on');
+    document.getElementById('segThumb').style.transform = `translateX(${i * 100}%)`;
     const customInput = document.getElementById('customMinutesInput');
     if (btn.dataset.minutes === 'custom') {
       customInput.hidden = false;
@@ -177,13 +178,13 @@ async function saveFocusSession(totalSeconds, actualSeconds, completed) {
   showSyncStatus(result.synced);
   try { await refreshDashboard(); } catch { /* offline; queued locally */ }
   resetRitualUI(totalSeconds);
-  document.getElementById('skipReasonTags').hidden = completed;
+  document.getElementById('skipReasonTags').classList.toggle('open', !completed);
 }
 
 document.querySelectorAll('#skipReasonTags .tag-btn').forEach((btn) => {
   btn.addEventListener('click', async () => {
     if (!lastSavedRecord) return;
-    document.getElementById('skipReasonTags').hidden = true;
+    document.getElementById('skipReasonTags').classList.remove('open');
     const updated = { ...lastSavedRecord, note: btn.dataset.reason };
     lastSavedRecord = updated;
     const result = await insertSession(updated);
@@ -211,12 +212,12 @@ function resetRitualUI(totalSeconds) {
 
 document.getElementById('checkinYesBtn').addEventListener('click', () => saveCheckin());
 document.getElementById('checkinNoBtn').addEventListener('click', () => {
-  document.getElementById('missReasonTags').hidden = false;
+  document.getElementById('missReasonTags').classList.add('open');
 });
 
 document.querySelectorAll('#missReasonTags .tag-btn').forEach((btn) => {
   btn.addEventListener('click', async () => {
-    document.getElementById('missReasonTags').hidden = true;
+    document.getElementById('missReasonTags').classList.remove('open');
     const record = {
       id: makeId(),
       type: 'miss',
@@ -235,7 +236,7 @@ document.querySelectorAll('#missReasonTags .tag-btn').forEach((btn) => {
 });
 
 async function saveCheckin() {
-  document.getElementById('missReasonTags').hidden = true;
+  document.getElementById('missReasonTags').classList.remove('open');
   const note = document.getElementById('noteInput').value.trim();
   const record = {
     id: makeId(),
